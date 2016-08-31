@@ -29,7 +29,7 @@ def _return_modified_command(cmd, recommendation_commands, replaced_command):
             modified_command = ["git", cmd.replace(replaced_command, recommendation_commands[int(response) - 1])]
         except Exception:
             modified_command = -1
-    else:
+    elif len(recommendation_commands):
         single_command = ["git", cmd.replace(replaced_command, recommendation_commands[0])]
         response = str(input(colorama.Fore.BLUE + "Do you want to run: " + colorama.Fore.YELLOW +
                              ' '.join(single_command) + colorama.Fore.BLUE + " ?\n" + colorama.Style.RESET_ALL))
@@ -37,16 +37,20 @@ def _return_modified_command(cmd, recommendation_commands, replaced_command):
             modified_command = single_command
         else:
             modified_command = -1
+    else:
+        modified_command = -1
     return modified_command
 
 
-def git_awesome(cmd):
+def git_awesome():
+    cmd = sys.argv[1]
+    full_cmd = ' '.join(sys.argv[1:])
     _, stderr_data = Popen(["git", cmd], stderr=PIPE).communicate()
     if len(stderr_data):
         stderr_data = stderr_data.decode('utf8')
         replaced_command, recommendation_commands = _git_output_parser(stderr_data)
         _print_error(recommendation_commands, stderr_data)
-        modified_command = _return_modified_command(cmd, recommendation_commands, replaced_command)
+        modified_command = _return_modified_command(full_cmd, recommendation_commands, replaced_command)
         if modified_command == -1:
             return
         print(colorama.Fore.GREEN + "Running: " + colorama.Fore.YELLOW + ' '.join(modified_command) +
@@ -57,4 +61,4 @@ def git_awesome(cmd):
 
 
 if __name__ == '__main__':
-    git_awesome(sys.argv[1])
+    git_awesome()
