@@ -4,6 +4,7 @@ import sys
 from subprocess import Popen, PIPE
 
 import colorama
+from six.moves import input
 
 
 def _git_output_parser(error_data):
@@ -18,21 +19,21 @@ def _print_error(recommendation_commands, stderr_data):
     for index, command in enumerate(recommendation_commands):
         stderr_data = stderr_data.replace(command, colorama.Fore.RED + str(index + 1) + '.  ' + colorama.Fore.MAGENTA +
                                           command + colorama.Style.RESET_ALL)
-    print stderr_data
+    print(stderr_data)
 
 
 def _return_modified_command(cmd, recommendation_commands, replaced_command):
     if len(recommendation_commands) > 1:
-        response = raw_input(colorama.Fore.BLUE + "Which one do you mean ?\n" + colorama.Style.RESET_ALL)
+        response = str(input(colorama.Fore.BLUE + "Which one do you mean ?\n" + colorama.Style.RESET_ALL))
         try:
             modified_command = ["git", cmd.replace(replaced_command, recommendation_commands[int(response) - 1])]
         except Exception:
             modified_command = -1
     else:
         single_command = ["git", cmd.replace(replaced_command, recommendation_commands[0])]
-        response = raw_input(colorama.Fore.BLUE + "Do you want to run: " + colorama.Fore.YELLOW +
-                             ' '.join(single_command) + colorama.Fore.BLUE + " ?\n" + colorama.Style.RESET_ALL).lower()
-        if response.startswith('y') or response.startswith('1'):
+        response = str(input(colorama.Fore.BLUE + "Do you want to run: " + colorama.Fore.YELLOW +
+                             ' '.join(single_command) + colorama.Fore.BLUE + " ?\n" + colorama.Style.RESET_ALL))
+        if response.startswith('y') or response.startswith('Y') or response.startswith('1'):
             modified_command = single_command
         else:
             modified_command = -1
@@ -42,6 +43,7 @@ def _return_modified_command(cmd, recommendation_commands, replaced_command):
 def git_awesome(cmd):
     _, stderr_data = Popen(["git", cmd], stderr=PIPE).communicate()
     if len(stderr_data):
+        stderr_data = stderr_data.decode('utf8')
         replaced_command, recommendation_commands = _git_output_parser(stderr_data)
         _print_error(recommendation_commands, stderr_data)
         modified_command = _return_modified_command(cmd, recommendation_commands, replaced_command)
@@ -51,7 +53,7 @@ def git_awesome(cmd):
               colorama.Style.RESET_ALL)
         _, stderr_data = Popen(modified_command, stderr=PIPE).communicate()
         if len(stderr_data):
-            print(stderr_data)
+            print(stderr_data.decode('utf8'))
 
 
 if __name__ == '__main__':
