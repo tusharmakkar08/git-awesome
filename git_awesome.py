@@ -1,5 +1,6 @@
 __author__ = 'tusharmakkar08'
 
+import os
 import sys
 from subprocess import Popen, PIPE
 
@@ -43,21 +44,28 @@ def _return_modified_command(cmd, recommendation_commands, replaced_command):
 
 
 def git_awesome():
-    cmd = sys.argv[1]
-    full_cmd = ' '.join(sys.argv[1:])
-    _, stderr_data = Popen(["git", cmd], stderr=PIPE).communicate()
-    if len(stderr_data):
-        stderr_data = stderr_data.decode('utf8')
-        replaced_command, recommendation_commands = _git_output_parser(stderr_data)
-        _print_error(recommendation_commands, stderr_data)
-        modified_command = _return_modified_command(full_cmd, recommendation_commands, replaced_command)
-        if modified_command == -1:
-            return
-        print(colorama.Fore.GREEN + "Running: " + colorama.Fore.YELLOW + ' '.join(modified_command) +
-              colorama.Style.RESET_ALL)
-        _, stderr_data = Popen(modified_command, stderr=PIPE).communicate()
-        if len(stderr_data):
-            print(stderr_data.decode('utf8'))
+    try:
+        cmd = sys.argv[1]
+        full_cmd = ' '.join(sys.argv[1:])
+        stderr = os.system('git ' + full_cmd)
+        if stderr:
+            _, stderr_data = Popen(["git", cmd], stderr=PIPE).communicate()
+            if len(stderr_data):
+                stderr_data = stderr_data.decode('utf8')
+                replaced_command, recommendation_commands = _git_output_parser(stderr_data)
+                _print_error(recommendation_commands, stderr_data)
+                modified_command = _return_modified_command(full_cmd, recommendation_commands, replaced_command)
+                if modified_command == -1:
+                    return
+                print(colorama.Fore.GREEN + "Running: " + colorama.Fore.YELLOW + ' '.join(modified_command) +
+                      colorama.Style.RESET_ALL)
+                stderr_ = os.system(' '.join(modified_command))
+                if stderr_:
+                    print(colorama.Fore.RED+'Unable to run command :('+colorama.Style.RESET_ALL)
+    except:
+        _, stderr_data = Popen(["git"], stderr=PIPE).communicate()
+        if stderr_data:
+            print(stderr_data)
 
 
 if __name__ == '__main__':
